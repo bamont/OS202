@@ -1,0 +1,18 @@
+TD2
+
+1.3 : Ensemble de Mandelbrot : 
+1) 
+   Nombre de tâches | Temps d'éxecution  | Speedup
+                1   | 3.2160394191741943 | 1
+                2   | 1.7914643287658691 | 1,796
+                3   | 1.379706859588623  | 2,332
+                4   | 1.1934716701507568 | 2,969
+
+2)
+   Nombre de tâches | Temps d'éxecution  | Speedup
+                2   | 4.417689323425293  | 0,729
+                3   | 2.6215667724609375 | 1,228
+                4   | 2.2605552673339844 | 1,422
+Le Speedup est moins important que dans le premier cas. Cela s'explique par le fait que il y a un processeur 
+en moins sur le calcul des données et par le fait que la latence créée par les fonctions send et recv est répétée 
+de nombreuses fois
