@@ -1,42 +1,43 @@
-"""
-Le jeu de la vie
-################
-Le jeu de la vie est un automate cellulaire inventé par Conway se basant normalement sur une grille infinie
-de cellules en deux dimensions. Ces cellules peuvent prendre deux états :
-    - un état vivant
-    - un état mort
-A l'initialisation, certaines cellules sont vivantes, d'autres mortes.
-Le principe du jeu est alors d'itérer de telle sorte qu'à chaque itération, une cellule va devoir interagir avec
-les huit cellules voisines (gauche, droite, bas, haut et les quatre en diagonales.) L'interaction se fait selon les
-règles suivantes pour calculer l'irération suivante :
-    - Une cellule vivante avec moins de deux cellules voisines vivantes meurt ( sous-population )
-    - Une cellule vivante avec deux ou trois cellules voisines vivantes reste vivante
-    - Une cellule vivante avec plus de trois cellules voisines vivantes meurt ( sur-population )
-    - Une cellule morte avec exactement trois cellules voisines vivantes devient vivante ( reproduction )
+# Le jeu de la vie
+# ################
+# Le jeu de la vie est un automate cellulaire inventé par Conway se basant normalement sur une grille infinie
+# de cellules en deux dimensions. Ces cellules peuvent prendre deux états :
+#     - un état vivant
+#     - un état mort
+# A l'initialisation, certaines cellules sont vivantes, d'autres mortes.
+# Le principe du jeu est alors d'itérer de telle sorte qu'à chaque itération, une cellule va devoir interagir avec
+# les huit cellules voisines (gauche, droite, bas, haut et les quatre en diagonales.) L'interaction se fait selon les
+# règles suivantes pour calculer l'irération suivante :
+#     - Une cellule vivante avec moins de deux cellules voisines vivantes meurt ( sous-population )
+#     - Une cellule vivante avec deux ou trois cellules voisines vivantes reste vivante
+#     - Une cellule vivante avec plus de trois cellules voisines vivantes meurt ( sur-population )
+#     - Une cellule morte avec exactement trois cellules voisines vivantes devient vivante ( reproduction )
 
-Pour ce projet, on change légèrement les règles en transformant la grille infinie en un tore contenant un
-nombre fini de cellules. Les cellules les plus à gauche ont pour voisines les cellules les plus à droite
-et inversement, et de même les cellules les plus en haut ont pour voisines les cellules les plus en bas
-et inversement.
+# Pour ce projet, on change légèrement les règles en transformant la grille infinie en un tore contenant un
+# nombre fini de cellules. Les cellules les plus à gauche ont pour voisines les cellules les plus à droite
+# et inversement, et de même les cellules les plus en haut ont pour voisines les cellules les plus en bas
+# et inversement.
 
-On itère ensuite pour étudier la façon dont évolue la population des cellules sur la grille.
-"""
+# On itère ensuite pour étudier la façon dont évolue la population des cellules sur la grille.
 import pygame  as pg
 import numpy   as np
+from mpi4py import MPI
 
+comm = MPI.COMM_WORLD
+nbp = comm.Get_size()
+rank = comm.Get_rank()
 
 class Grille:
-    """
-    Grille torique décrivant l'automate cellulaire.
-    En entrée lors de la création de la grille :
-        - dimensions est un tuple contenant le nombre de cellules dans les deux directions (nombre lignes, nombre colonnes)
-        - init_pattern est une liste de cellules initialement vivantes sur cette grille (les autres sont considérées comme mortes)
-        - color_life est la couleur dans laquelle on affiche une cellule vivante
-        - color_dead est la couleur dans laquelle on affiche une cellule morte
-    Si aucun pattern n'est donné, on tire au hasard quels sont les cellules vivantes et les cellules mortes
-    Exemple :
-       grid = Grille( (10,10), init_pattern=[(2,2),(0,2),(4,2),(2,0),(2,4)], color_life=pg.Color("red"), color_dead=pg.Color("black"))
-    """
+    # Grille torique décrivant l'automate cellulaire.
+    # En entrée lors de la création de la grille :
+    #     - dimensions est un tuple contenant le nombre de cellules dans les deux directions (nombre lignes, nombre colonnes)
+    #     - init_pattern est une liste de cellules initialement vivantes sur cette grille (les autres sont considérées comme mortes)
+    #     - color_life est la couleur dans laquelle on affiche une cellule vivante
+    #     - color_dead est la couleur dans laquelle on affiche une cellule morte
+    # Si aucun pattern n'est donné, on tire au hasard quels sont les cellules vivantes et les cellules mortes
+    # Exemple :
+    #    grid = Grille( (10,10), init_pattern=[(2,2),(0,2),(4,2),(2,0),(2,4)], color_life=pg.Color("red"), color_dead=pg.Color("black"))
+
     def __init__(self, dim, init_pattern=None, color_life=pg.Color("black"), color_dead=pg.Color("white")):
         import random
         self.dimensions = dim
@@ -51,9 +52,8 @@ class Grille:
         self.col_dead = color_dead
 
     def compute_next_iteration(self):
-        """
-        Calcule la prochaine génération de cellules en suivant les règles du jeu de la vie
-        """
+        # Calcule la prochaine génération de cellules en suivant les règles du jeu de la vie
+
         # Remarque 1: on pourrait optimiser en faisant du vectoriel, mais pour plus de clarté, on utilise les boucles
         # Remarque 2: on voit la grille plus comme une matrice qu'une grille géométrique. L'indice (0,0) est donc en haut
         #             à gauche de la grille !
@@ -87,11 +87,9 @@ class Grille:
 
 
 class App:
-    """
-    Cette classe décrit la fenêtre affichant la grille à l'écran
-        - geometry est un tuple de deux entiers donnant le nombre de pixels verticaux et horizontaux (dans cet ordre)
-        - grid est la grille décrivant l'automate cellulaire (voir plus haut)
-    """
+    # Cette classe décrit la fenêtre affichant la grille à l'écran
+    #     - geometry est un tuple de deux entiers donnant le nombre de pixels verticaux et horizontaux (dans cet ordre)
+    #     - grid est la grille décrivant l'automate cellulaire (voir plus haut)
     def __init__(self, geometry, grid):
         self.grid = grid
         # Calcul de la taille d'une cellule par rapport à la taille de la fenêtre et de la grille à afficher :
@@ -110,9 +108,8 @@ class App:
         self.canvas_cells = []
 
     def compute_rectangle(self, i: int, j: int):
-        """
-        Calcul la géométrie du rectangle correspondant à la cellule (i,j)
-        """
+        # Calcul la géométrie du rectangle correspondant à la cellule (i,j)
+
         return (self.size_x*j, self.height - self.size_y*i - 1, self.size_x, self.size_y)
 
     def compute_color(self, i: int, j: int):
